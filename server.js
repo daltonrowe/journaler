@@ -54,14 +54,25 @@ app.get("/list", (_req, res) => {
   res.json(dirs);
 });
 
-app.get("/save", (_req, res) => {
-  const dir = path.join(import.meta.dirname, config.dir);
-  const files = fs.readdirSync(dir);
-  const dirs = files.filter((file) =>
-    fs.statSync(path.join(dir, file)).isDirectory(),
-  );
+app.post("/entry", (req, res) => {
+  const { entry } = req.body;
 
-  res.json(dirs);
+  const id = String(Date.now());
+  fs.mkdirSync(path.join(config.dir, id));
+
+  const file = path.join(import.meta.dirname, config.dir, id, "entry.txt");
+  fs.writeFileSync(file, entry);
+
+  res.json({ id });
+});
+
+app.put("/entry", (req, res) => {
+  const { id, entry } = req.body;
+
+  const file = path.join(import.meta.dirname, config.dir, id, "entry.txt");
+  fs.writeFileSync(file, entry);
+
+  res.send(200);
 });
 
 app.listen(PORT, () => {

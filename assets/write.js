@@ -9,28 +9,58 @@ function id() {
 }
 
 async function read() {
-  const res = await fetch(`/${id()}/entry.txt`);
+  const res = await fetch(`/${id()}/entry`);
   const text = await res.text();
 
-  return window.journaler.decrypt(text);
+  return text;
+}
+
+async function create() {
+  const res = await fetch("/entry", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      entry: entry.value,
+    }),
+  });
+
+  const { id } = await res.json();
+
+  window.history.pushState({}, "", `/write?id=${id}`);
+}
+
+async function update() {
+  await fetch("/entry", {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      id: id(),
+      entry: entry.value,
+    }),
+  });
 }
 
 async function save() {
-  const encrypted = window.journaler.encrypt(entry.value);
+  const postId = id();
 
-  await fetch(`/save/${id()}`, {
-    method: "POST",
-    body: JSON.stringify({
-      id: id(),
-      entry: encrypted,
-    }),
-  });
+  if (postId) {
+    update(postId);
+  } else {
+    create();
+  }
 }
 
 window.addEventListener("journaler-ready", async () => {
   if (!saveButton || !entry) return;
 
   saveButton.addEventListener("click", save);
-  const value = await read();
-  entry.value = value;
+
+  if (id()) {
+    const value = await read();
+    entry.value = value;
+  }
 });
