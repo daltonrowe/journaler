@@ -8,3 +8,11 @@ if (localPassword) {
   window.localStorage.setItem('password', promptPassword);
   window.journaler.password = localPassword;
 }
+
+function encrypt(message) {
+  return message
+}
+
+function decrypt(message) {
+  return message
+}

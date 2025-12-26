@@ -1,29 +1,25 @@
-const express = require('express');
-const path = require('path');
-const fs = require('fs');
+import express from 'express';
+import path from 'path';
+import fs from 'fs';
 
-const config = JSON.parse(fs.readFileSync(path.join(__dirname, 'env.json'), 'utf8'));
+const config = JSON.parse(fs.readFileSync(path.join(import.meta.dirname, 'env.json'), 'utf8'));
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-
-
-// Middleware
 app.use(express.json());
+app.use(express.static(path.join(import.meta.dirname, 'views'), {
+  extensions: ['html']
+}));
 
-// Serve static files
-app.use(express.static(path.join(__dirname, 'views')));
+app.get('/list', (_req, res) => {
+  const dir = path.join(import.meta.dirname, config.dir)
+  const files = fs.readdirSync(dir);
+  const dirs = files.filter(file => fs.statSync(path.join(dir, file)).isDirectory())
 
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  res.json(dirs);
 });
 
-app.get('/list', (req, res) => {
-  res.json({ items: [] });
-});
-
-// Start server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
