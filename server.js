@@ -1,6 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import express from "express";
+import spawnAndLog from "./lib/spawnAndLog.js";
+import sendView from "./lib/sendView.js";
 
 const config = JSON.parse(
   fs.readFileSync(path.join(import.meta.dirname, "env.json"), "utf8"),
@@ -11,41 +13,24 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(
-  express.static(path.join(import.meta.dirname, config.dir), {
+  express.static(path.join(process.cwd(), config.dir), {
     extensions: ["txt"],
   }),
 );
-app.use(express.static(path.join(import.meta.dirname, "assets")));
-
-function sendView(req, res, next) {
-  if (
-    req.path.indexOf(".") !== -1 ||
-    (req.path.match(/\//g) || []).length > 1
-  ) {
-    next();
-    return;
-  }
-
-  const file = req.path === "/" ? "list" : req.path.split("?")[0];
-  const template = fs
-    .readFileSync(path.join(import.meta.dirname, "templates", `page.html`))
-    .toString();
-  const body = fs
-    .readFileSync(path.join(import.meta.dirname, "views", `${file}.html`))
-    .toString();
-
-  const key = "<body>";
-  const start = template.indexOf(key) + key.length;
-  const content = template.slice(0, start) + body + template.slice(start);
-
-  res.send(content);
-}
+app.use(express.static(path.join(process.cwd(), "assets")));
 
 app.get("/", sendView);
 app.get("/write", sendView);
+app.get("/publish", sendView);
+
+app.get("/staged", async (_req, res) => {
+  const data = await spawnAndLog('git add . && git diff --name-only --staged')
+  const files = data.split("\n");
+  res.json({ files });
+});
 
 app.get("/list", (_req, res) => {
-  const dir = path.join(import.meta.dirname, config.dir);
+  const dir = path.join(config.dir);
   const files = fs.readdirSync(dir);
   const dirs = files.filter((file) =>
     fs.statSync(path.join(dir, file)).isDirectory(),
@@ -60,7 +45,7 @@ app.post("/entry", (req, res) => {
   const id = String(Date.now());
   fs.mkdirSync(path.join(config.dir, id));
 
-  const file = path.join(import.meta.dirname, config.dir, id, "entry.txt");
+  const file = path.join(config.dir, id, "entry.txt");
   fs.writeFileSync(file, entry);
 
   res.json({ id });
@@ -69,7 +54,7 @@ app.post("/entry", (req, res) => {
 app.put("/entry", (req, res) => {
   const { id, entry } = req.body;
 
-  const file = path.join(import.meta.dirname, config.dir, id, "entry.txt");
+  const file = path.join(config.dir, id, "entry.txt");
   fs.writeFileSync(file, entry);
 
   res.send(200);

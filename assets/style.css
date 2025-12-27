@@ -23,3 +23,12 @@ button {
   width: 100%;
   padding: 20px;
 }
+
+ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display:flex;
+  flex-direction: column;
+  gap: 8px;
+}
