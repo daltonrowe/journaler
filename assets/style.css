@@ -39,6 +39,9 @@ button, a.button {
   align-items: center;
   border: 1px solid #ccc;
   cursor: pointer;
+  font-size: 14px;
+  text-decoration: none;
+  color: #222;
 
   &:hover {
     background: #ddd;

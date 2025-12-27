@@ -13,7 +13,7 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(
-  express.static(path.join(process.cwd(), config.dir), {
+  express.static(path.join(config.dir), {
     extensions: ["txt"],
   }),
 );
