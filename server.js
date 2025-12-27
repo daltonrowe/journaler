@@ -1,8 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import express from "express";
-import spawnAndLog from "./lib/spawnAndLog.js";
 import sendView from "./lib/sendView.js";
+import spawnAndLog from "./lib/spawnAndLog.js";
 
 const config = JSON.parse(
   fs.readFileSync(path.join(import.meta.dirname, "env.json"), "utf8"),
@@ -24,13 +24,15 @@ app.get("/write", sendView);
 app.get("/publish", sendView);
 
 app.get("/staged", async (_req, res) => {
-  const data = await spawnAndLog('git add . && git diff --name-only --staged')
+  const data = await spawnAndLog("git add . && git diff --name-only --staged");
   const files = data.split("\n");
   res.json({ files });
 });
 
 app.post("/publish", async (_req, res) => {
-  const stdout = await spawnAndLog(`git commit -m 'Journaler Publish ${Date.now()}' && git push`)
+  const stdout = await spawnAndLog(
+    `git commit -m 'Journaler Publish ${Date.now()}' && git push`,
+  );
   res.json({ stdout });
 });
 

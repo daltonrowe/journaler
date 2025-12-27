@@ -2,10 +2,10 @@ const staged = document.querySelector("#staged");
 const publish = document.querySelector("#publish");
 
 async function publishStaged() {
-  const res = await fetch("/publish", { method: 'POST' });
+  const res = await fetch("/publish", { method: "POST" });
   const data = await res.json();
 
-  console.log(data);
+  alert(data);
 
   return data;
 }
@@ -29,7 +29,7 @@ function renderStaged(files) {
 
 async function refreshStaged() {
   const files = await fetchStaged();
-  renderStaged(files)
+  renderStaged(files);
 }
 
 window.addEventListener("journaler-ready", async () => {
@@ -37,5 +37,5 @@ window.addEventListener("journaler-ready", async () => {
 
   refreshStaged();
 
-  publish.addEventListener("click", publishStaged)
+  publish.addEventListener("click", publishStaged);
 });
