@@ -5,9 +5,12 @@ async function publishStaged() {
   const res = await fetch("/publish", { method: "POST" });
   const data = await res.json();
 
-  alert(data);
-
   return data;
+}
+
+async function handlePublish() {
+  const data = publishStaged();
+  alert(data.stdin)
 }
 
 async function fetchStaged() {
@@ -37,5 +40,5 @@ window.addEventListener("journaler-ready", async () => {
 
   refreshStaged();
 
-  publish.addEventListener("click", publishStaged);
+  publish.addEventListener("click", handlePublish);
 });
