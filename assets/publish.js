@@ -9,7 +9,7 @@ async function publishStaged() {
 }
 
 async function handlePublish() {
-  const data = publishStaged();
+  const data = await publishStaged();
   console.log(data);
 
   alert(data.stdout)
