@@ -10,9 +10,8 @@ async function publishStaged() {
 
 async function handlePublish() {
   const data = await publishStaged();
-  console.log(data);
-
   alert(data.stdout)
+  refreshStaged();
 }
 
 async function fetchStaged() {
