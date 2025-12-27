@@ -29,6 +29,11 @@ app.get("/staged", async (_req, res) => {
   res.json({ files });
 });
 
+app.post("/publish", async (_req, res) => {
+  const stdout = await spawnAndLog(`git commit -m 'Journaler Publish ${Date.now()}' && git push`)
+  res.json({ stdout });
+});
+
 app.get("/list", (_req, res) => {
   const dir = path.join(config.dir);
   const files = fs.readdirSync(dir);

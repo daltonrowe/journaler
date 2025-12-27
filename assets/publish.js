@@ -1,4 +1,14 @@
+const staged = document.querySelector("#staged");
 const publish = document.querySelector("#publish");
+
+async function publishStaged() {
+  const res = await fetch("/publish", { method: 'POST' });
+  const data = await res.json();
+
+  console.log(data);
+
+  return data;
+}
 
 async function fetchStaged() {
   const res = await fetch("/staged");
@@ -14,12 +24,18 @@ function renderStaged(files) {
     markup += `<div>${file}</div>`;
   }
 
-  publish.innerHTML = markup;
+  staged.innerHTML = markup;
+}
+
+async function refreshStaged() {
+  const files = await fetchStaged();
+  renderStaged(files)
 }
 
 window.addEventListener("journaler-ready", async () => {
-  if (!publish) return;
+  if (!staged) return;
 
-  const files = await fetchStaged();
-  renderStaged(files)
+  refreshStaged();
+
+  publish.addEventListener("click", publishStaged)
 });
