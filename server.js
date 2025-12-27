@@ -25,7 +25,7 @@ app.get("/publish", sendView);
 
 app.get("/staged", async (_req, res) => {
   const data = await spawnAndLog("git add . && git diff --name-only --staged");
-  const files = data.split("\n").filter(d => !!d);
+  const files = data.split("\n").filter((d) => !!d);
   res.json({ files });
 });
 
