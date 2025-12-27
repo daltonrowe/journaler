@@ -9,9 +9,11 @@ async function publishStaged() {
 }
 
 async function handlePublish() {
+  publish.classList.add('processing')
   const data = await publishStaged();
   alert(data.stdout)
   refreshStaged();
+  publish.classList.remove('processing')
 }
 
 async function fetchStaged() {
