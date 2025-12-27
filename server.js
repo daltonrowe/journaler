@@ -24,7 +24,7 @@ app.get("/write", sendView);
 app.get("/publish", sendView);
 
 app.get("/staged", async (_req, res) => {
-  const data = await spawnAndLog("git add . && git diff --name-only --staged", config.dir);
+  const data = await spawnAndLog("git add . && git diff --name-only --staged", config.repo);
   const files = data.split("\n").filter((d) => !!d);
   res.json({ files });
 });
@@ -32,7 +32,7 @@ app.get("/staged", async (_req, res) => {
 app.post("/publish", async (_req, res) => {
   const stdout = await spawnAndLog(
     `git commit -m 'Journaler Publish ${Date.now()}' && git push`,
-    config.dir
+    config.repo
   );
   res.json({ stdout });
 });
