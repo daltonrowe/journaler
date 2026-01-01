@@ -12,11 +12,6 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
-app.use(
-  express.static(path.join(config.dir), {
-    extensions: ["txt"],
-  }),
-);
 app.use(express.static(path.join(process.cwd(), "assets")));
 
 app.get("/", sendView);
@@ -50,23 +45,38 @@ app.get("/list", (_req, res) => {
   res.json(dirs);
 });
 
+app.get("/entry", (req, res) => {
+  const { id } = req.query;
+
+  const entryFile = path.join(config.dir, String(id), "entry.txt");
+  const metadataFile = path.join(config.dir, String(id), "metadata.json");
+  const entry = fs.readFileSync(entryFile, { encoding: 'utf-8' });
+  const metadata = fs.readFileSync(metadataFile, { encoding: 'utf-8' });
+
+  res.json({ id, metadata, entry });
+});
+
 app.post("/entry", (req, res) => {
-  const { entry } = req.body;
+  const { entry, metadata } = req.body;
 
   const id = String(Date.now());
   fs.mkdirSync(path.join(config.dir, id));
 
-  const file = path.join(config.dir, id, "entry.txt");
-  fs.writeFileSync(file, entry);
+  const entryFile = path.join(config.dir, id, "entry.txt");
+  const metadataFile = path.join(config.dir, id, "metadata.json");
+  fs.writeFileSync(entryFile, entry);
+  fs.writeFileSync(metadataFile, JSON.stringify(metadata, null, 2));
 
   res.json({ id });
 });
 
 app.put("/entry", (req, res) => {
-  const { id, entry } = req.body;
+  const { id, entry, metadata } = req.body;
 
-  const file = path.join(config.dir, id, "entry.txt");
-  fs.writeFileSync(file, entry);
+  const entryFile = path.join(config.dir, id, "entry.txt");
+  const metadataFile = path.join(config.dir, id, "metadata.json");
+  fs.writeFileSync(entryFile, entry);
+  fs.writeFileSync(metadataFile, metadata);
 
   res.send(200);
 });
