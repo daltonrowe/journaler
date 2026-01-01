@@ -25,6 +25,12 @@ body {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  background: #222;
+  color: white;
+}
+
+a {
+  color: white;
 }
 
 nav {
@@ -36,6 +42,9 @@ textarea {
   width: 100%;
   min-height: 600px;
   field-sizing: content;
+  background: #333;
+  border-radius: 4px;
+  color: white;
 }
 
 .row {
