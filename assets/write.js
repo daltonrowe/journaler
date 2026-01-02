@@ -1,5 +1,6 @@
 const saveButton = document.querySelector("#save");
 const entry = document.querySelector("#write");
+const upload = document.querySelector("#upload");
 const visibility = document.querySelector("#visibility");
 
 const salt = "thisisnotasecret";
@@ -129,20 +130,100 @@ async function update() {
   });
 }
 
+function imageId() {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+  let result = "";
+  for (let i = 0; i < 8; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
+async function queueImage(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      const maxDim = 1280;
+      let width = img.width;
+      let height = img.height;
+
+      if (width > maxDim || height > maxDim) {
+        if (width > height) {
+          height = Math.round((height * maxDim) / width);
+          width = maxDim;
+        } else {
+          width = Math.round((width * maxDim) / height);
+          height = maxDim;
+        }
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, width, height);
+
+      const resizedImg = document.createElement("img");
+      resizedImg.classList.add("pending");
+      resizedImg.src = canvas.toDataURL(file.type || "image/jpeg", 0.9);
+      document.querySelector("#images").appendChild(resizedImg);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function pendingImages() {
+  return Array.from(document.querySelectorAll("#images .pending"));
+}
+
+async function uploadImages() {
+  const pending = pendingImages();
+
+  const promises = [];
+
+  for (const image of pending) {
+    const body = {
+      id: id(),
+      data: image.src,
+      imageId: imageId(),
+    };
+
+    promises.push(
+      fetch("/entry/image", {
+        method: "POST",
+        body: JSON.stringify(body),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }),
+    );
+  }
+
+  await Promise.allSettled(promises);
+}
+
 async function save() {
   const postId = id();
 
   if (postId) {
-    update(postId);
+    await update(postId);
   } else {
-    create();
+    await create();
   }
+
+  await uploadImages();
 }
 
 window.addEventListener("journaler-ready", async () => {
   if (!saveButton || !write) return;
 
   saveButton.addEventListener("click", save);
+  upload.addEventListener("change", queueImage);
 
   if (id()) {
     const { metadata, entry } = await read();
@@ -150,11 +231,12 @@ window.addEventListener("journaler-ready", async () => {
       write.value = entry;
     } else {
       const password = prompt("Enter private password:");
+
       try {
         const decrypted = await decryptText(entry, password);
         write.value = decrypted;
-      } catch (error) {
-        alert("Password incorrect")
+      } catch (_error) {
+        alert("Password incorrect");
       }
     }
   }

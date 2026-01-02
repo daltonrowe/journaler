@@ -87,3 +87,19 @@ ol {
   flex-direction: column;
   gap: 8px;
 }
+
+#images {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 200px));
+  gap: 10px;
+
+  img {
+    display: block;
+    aspect-ratio: 1;
+    height: 200px;
+    width: auto;
+    object-fit: contain;
+    background: #333;
+    border-radius: 4px;
+  }
+}

@@ -50,8 +50,8 @@ app.get("/entry", (req, res) => {
 
   const entryFile = path.join(config.dir, String(id), "entry.txt");
   const metadataFile = path.join(config.dir, String(id), "metadata.json");
-  const entry = fs.readFileSync(entryFile, { encoding: 'utf-8' });
-  const metadata = fs.readFileSync(metadataFile, { encoding: 'utf-8' });
+  const entry = fs.readFileSync(entryFile, { encoding: "utf-8" });
+  const metadata = fs.readFileSync(metadataFile, { encoding: "utf-8" });
 
   res.json({ id, metadata, entry });
 });
@@ -70,13 +70,27 @@ app.post("/entry", (req, res) => {
   res.json({ id });
 });
 
+app.post("/entry/image", (req, res) => {
+  console.log("here!");
+
+  const { id, imageId, data } = req.body;
+
+  console.log(typeof data);
+  console.log(data);
+
+  const imageFile = path.join(config.dir, id, `${imageId}.txt`);
+  fs.writeFileSync(imageFile, data);
+
+  res.send(200);
+});
+
 app.put("/entry", (req, res) => {
   const { id, entry, metadata } = req.body;
 
   const entryFile = path.join(config.dir, id, "entry.txt");
   const metadataFile = path.join(config.dir, id, "metadata.json");
   fs.writeFileSync(entryFile, entry);
-  fs.writeFileSync(metadataFile, metadata);
+  fs.writeFileSync(metadataFile, JSON.stringify(metadata, null, 2));
 
   res.send(200);
 });
