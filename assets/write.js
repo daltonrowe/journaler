@@ -5,6 +5,7 @@ const visibility = document.querySelector("#visibility");
 
 const salt = "thisisnotasecret";
 const iv = "alsonotasecret";
+let password = null;
 
 function arrayBufferToHex(buffer) {
   return [...new Uint8Array(buffer)]
@@ -20,7 +21,7 @@ function hexToArrayBuffer(hex) {
   return bytes.buffer;
 }
 
-async function getCryptoKey(password) {
+async function getCryptoKey() {
   const encoder = new TextEncoder();
   const keyMaterial = encoder.encode(password);
   return crypto.subtle.importKey(
@@ -32,8 +33,9 @@ async function getCryptoKey(password) {
   );
 }
 
-async function deriveKey(password) {
+async function deriveKey() {
   const keyMaterial = await getCryptoKey(password);
+
   return crypto.subtle.deriveKey(
     {
       name: "PBKDF2",
@@ -48,7 +50,7 @@ async function deriveKey(password) {
   );
 }
 
-async function encryptText(text, password) {
+async function encryptText(text) {
   const encoder = new TextEncoder();
   const key = await deriveKey(password);
 
@@ -61,7 +63,7 @@ async function encryptText(text, password) {
   return arrayBufferToHex(encrypted);
 }
 
-async function decryptText(encryptedData, password) {
+async function decryptText(encryptedData) {
   const key = await deriveKey(password, hexToArrayBuffer(salt));
 
   const decrypted = await crypto.subtle.decrypt(
@@ -83,24 +85,19 @@ function id() {
 
 async function read() {
   const res = await fetch(`/entry?id=${id()}`);
-  const text = await res.json();
+  const json = await res.json();
 
-  return text;
+  return json;
 }
 
 async function content(injected = {}) {
-  const password = prompt("Enter private password:");
-
   const metadata = {
     visibility: visibility.value,
   };
 
   const data = {
     metadata,
-    entry:
-      visibility.value === "public"
-        ? entry.value
-        : await encryptText(write.value, password),
+    entry: password ? await encryptText(write.value) : entry.value,
   };
 
   return JSON.stringify({ ...data, ...injected });
@@ -128,15 +125,6 @@ async function update() {
     },
     body: await content({ id: id() }),
   });
-}
-
-function imageId() {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-  let result = "";
-  for (let i = 0; i < 8; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
 }
 
 async function queueImage(event) {
@@ -189,8 +177,7 @@ async function uploadImages() {
   for (const image of pending) {
     const body = {
       id: id(),
-      data: image.src,
-      imageId: imageId(),
+      data: password ? await encryptText(image.src) : image.src,
     };
 
     promises.push(
@@ -207,8 +194,52 @@ async function uploadImages() {
   await Promise.allSettled(promises);
 }
 
+async function displayImage(image) {
+  const img = document.createElement("img");
+  img.title = image;
+
+  const res = await fetch(`/${id()}/${image}`);
+  const data = await res.text();
+
+  if (password) {
+    img.src = await decryptText(data);
+  } else {
+    img.src = data;
+  }
+
+  images.appendChild(img);
+}
+
+async function load() {
+  const { metadata, entry, images } = await read();
+
+  if (metadata.visibility === "private") {
+    password = prompt("Enter private password:");
+  }
+
+  let entryValue = entry;
+
+  if (password) {
+    try {
+      entryValue = await decryptText(entry);
+    } catch (_error) {
+      alert("Password incorrect.");
+      return;
+    }
+  }
+
+  write.value = entryValue;
+  for (const image of images) {
+    displayImage(image);
+  }
+}
+
 async function save() {
   const postId = id();
+
+  if (!password && visibility.value === "private") {
+    password = prompt("Enter private password:");
+  }
 
   if (postId) {
     await update(postId);
@@ -217,6 +248,10 @@ async function save() {
   }
 
   await uploadImages();
+  const images = pendingImages();
+  for (const image of images) {
+    image.classList.remove('pending')
+  }
 }
 
 window.addEventListener("journaler-ready", async () => {
@@ -225,19 +260,5 @@ window.addEventListener("journaler-ready", async () => {
   saveButton.addEventListener("click", save);
   upload.addEventListener("change", queueImage);
 
-  if (id()) {
-    const { metadata, entry } = await read();
-    if (metadata.visibility === "public") {
-      write.value = entry;
-    } else {
-      const password = prompt("Enter private password:");
-
-      try {
-        const decrypted = await decryptText(entry, password);
-        write.value = decrypted;
-      } catch (_error) {
-        alert("Password incorrect");
-      }
-    }
-  }
+  if (id()) load();
 });

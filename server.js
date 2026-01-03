@@ -3,6 +3,7 @@ import path from "node:path";
 import express from "express";
 import sendView from "./lib/sendView.js";
 import spawnAndLog from "./lib/spawnAndLog.js";
+import { alphaId } from "./lib/alphaId.js";
 
 const config = JSON.parse(
   fs.readFileSync(path.join(import.meta.dirname, "env.json"), "utf8"),
@@ -11,8 +12,9 @@ const config = JSON.parse(
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(express.json());
+app.use(express.json({ limit: "5mb" }));
 app.use(express.static(path.join(process.cwd(), "assets")));
+app.use(express.static(config.dir));
 
 app.get("/", sendView);
 app.get("/write", sendView);
@@ -48,12 +50,15 @@ app.get("/list", (_req, res) => {
 app.get("/entry", (req, res) => {
   const { id } = req.query;
 
+  const entryRoot = path.join(config.dir, id);
   const entryFile = path.join(config.dir, String(id), "entry.txt");
   const metadataFile = path.join(config.dir, String(id), "metadata.json");
-  const entry = fs.readFileSync(entryFile, { encoding: "utf-8" });
-  const metadata = fs.readFileSync(metadataFile, { encoding: "utf-8" });
 
-  res.json({ id, metadata, entry });
+  const entry = fs.readFileSync(entryFile, { encoding: "utf-8" });
+  const metadata = JSON.parse(fs.readFileSync(metadataFile, { encoding: "utf-8" }));
+  const images = fs.readdirSync(entryRoot).filter((f) => f.startsWith("image_"));
+
+  res.json({ id, metadata, entry, images });
 });
 
 app.post("/entry", (req, res) => {
@@ -64,6 +69,7 @@ app.post("/entry", (req, res) => {
 
   const entryFile = path.join(config.dir, id, "entry.txt");
   const metadataFile = path.join(config.dir, id, "metadata.json");
+
   fs.writeFileSync(entryFile, entry);
   fs.writeFileSync(metadataFile, JSON.stringify(metadata, null, 2));
 
@@ -71,14 +77,9 @@ app.post("/entry", (req, res) => {
 });
 
 app.post("/entry/image", (req, res) => {
-  console.log("here!");
+  const { id, data } = req.body;
 
-  const { id, imageId, data } = req.body;
-
-  console.log(typeof data);
-  console.log(data);
-
-  const imageFile = path.join(config.dir, id, `${imageId}.txt`);
+  const imageFile = path.join(config.dir, id, `image_${alphaId()}`);
   fs.writeFileSync(imageFile, data);
 
   res.send(200);
