@@ -250,7 +250,7 @@ async function save() {
   await uploadImages();
   const images = pendingImages();
   for (const image of images) {
-    image.classList.remove('pending')
+    image.classList.remove("pending");
   }
 }
 

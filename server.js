@@ -1,13 +1,13 @@
 import fs from "node:fs";
 import path from "node:path";
 import express from "express";
+import { alphaId } from "./lib/alphaId.js";
 import sendView from "./lib/sendView.js";
 import spawnAndLog from "./lib/spawnAndLog.js";
-import { alphaId } from "./lib/alphaId.js";
 
-const config = JSON.parse(
-  fs.readFileSync(path.join(import.meta.dirname, "env.json"), "utf8"),
-);
+export const root = import.meta.dirname;
+
+const config = JSON.parse(fs.readFileSync(path.join(root, "env.json"), "utf8"));
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -55,8 +55,12 @@ app.get("/entry", (req, res) => {
   const metadataFile = path.join(config.dir, String(id), "metadata.json");
 
   const entry = fs.readFileSync(entryFile, { encoding: "utf-8" });
-  const metadata = JSON.parse(fs.readFileSync(metadataFile, { encoding: "utf-8" }));
-  const images = fs.readdirSync(entryRoot).filter((f) => f.startsWith("image_"));
+  const metadata = JSON.parse(
+    fs.readFileSync(metadataFile, { encoding: "utf-8" }),
+  );
+  const images = fs
+    .readdirSync(entryRoot)
+    .filter((f) => f.startsWith("image_"));
 
   res.json({ id, metadata, entry, images });
 });
