@@ -13,7 +13,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json({ limit: "5mb" }));
-app.use(express.static(path.join(process.cwd(), "assets")));
+app.use(express.static(path.join(root, "assets")));
 app.use(express.static(config.dir));
 
 app.get("/", sendView);
