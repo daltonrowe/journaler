@@ -36,6 +36,8 @@ async function fetchList() {
 }
 
 async function renderSync(syncKey) {
+  console.log(syncKey, window.journaler.password);
+
   if (syncKey === false) {
     sync.innerHTML = "ℹ️ Sync key not found. Click to create.";
     sync.dataset.state = "not-found";

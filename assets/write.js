@@ -19,10 +19,6 @@ async function read() {
 }
 
 async function content(injected = {}) {
-  const metadata = {
-    visibility: visibility.value,
-  };
-
   const data = {
     metadata,
     entry: window.journaler.password ? await window.journaler.encryptText(write.value) : entry.value,
@@ -139,9 +135,10 @@ async function displayImage(image) {
 }
 
 async function load() {
-  const { metadata, entry, images } = await read();
+  const { type, visibility, entry, images } = await read();
 
-  if (metadata.visibility === "private") {
+
+  if (visibility === "private" && !window.journaler.password) {
     window.journaler.requestPassword();
   }
 

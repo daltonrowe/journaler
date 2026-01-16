@@ -100,32 +100,25 @@ app.get("/:feed/entry", (req, res) => {
   const { id } = req.query;
   const { dir } = config.feeds[req.params.feed];
 
-  const entryRoot = path.join(dir, id);
+  const entryRoot = path.join(dir, String(id));
   const entryFile = path.join(dir, String(id), "entry.txt");
-  const metadataFile = path.join(dir, String(id), "metadata.json");
-
   const entry = fs.readFileSync(entryFile, { encoding: "utf-8" });
-  const metadata = JSON.parse(
-    fs.readFileSync(metadataFile, { encoding: "utf-8" }),
-  );
+
   const images = fs
     .readdirSync(entryRoot)
     .filter((f) => f.startsWith("image_"));
 
-  res.json({ id, metadata, entry, images });
+  res.json({ id, entry, images, ...config.feeds[req.params.feed] });
 });
 
 app.post("/:feed/entry", (req, res) => {
-  const { entry, metadata } = req.body;
+  const { entry } = req.body;
 
   const id = String(Date.now());
   fs.mkdirSync(path.join(config.dir, id));
 
   const entryFile = path.join(config.dir, id, "entry.txt");
-  const metadataFile = path.join(config.dir, id, "metadata.json");
-
   fs.writeFileSync(entryFile, entry);
-  fs.writeFileSync(metadataFile, JSON.stringify(metadata, null, 2));
 
   res.json({ id });
 });
@@ -140,12 +133,10 @@ app.post("/:feed/entry/image", (req, res) => {
 });
 
 app.put("/:feed/entry", (req, res) => {
-  const { id, entry, metadata } = req.body;
+  const { id, entry } = req.body;
 
   const entryFile = path.join(config.dir, id, "entry.txt");
-  const metadataFile = path.join(config.dir, id, "metadata.json");
   fs.writeFileSync(entryFile, entry);
-  fs.writeFileSync(metadataFile, JSON.stringify(metadata, null, 2));
 
   res.send(200);
 });

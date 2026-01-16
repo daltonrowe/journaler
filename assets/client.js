@@ -2,11 +2,12 @@ window.journaler = {
   salt: "thisisnotasecret",
   iv: "alsonotasecret",
   sessionKeyBase: "journalerp",
+  entry: null
 };
 
 window.journaler.feed = function () {
   const pattern = new URLPattern({ pathname: "/:feed/*" });
-  const { feed } = pattern.exec(window.location).pathname.groups;
+  const feed = pattern.exec(window.location)?.pathname?.groups?.feed;
 
   return feed;
 }
