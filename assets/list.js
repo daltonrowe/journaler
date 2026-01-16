@@ -1,5 +1,6 @@
 const list = document.querySelector("#list");
 const sync = document.querySelector("#sync");
+const createNew = document.querySelector("#createNew");
 
 function formatTitle(id, type) {
   const options = {
@@ -36,8 +37,6 @@ async function fetchList() {
 }
 
 async function renderSync(syncKey) {
-  console.log(syncKey, window.journaler.password);
-
   if (syncKey === false) {
     sync.innerHTML = "ℹ️ Sync key not found. Click to create.";
     sync.dataset.state = "not-found";
@@ -107,13 +106,21 @@ async function handleSync() {
   }
 }
 
+function renderCreate() {
+  createNew.innerHTML = `<a href="${window.journaler.feedUrl('write')}">Create New</a>`
+}
+
 window.addEventListener("journaler-ready", async () => {
   if (!list) return;
 
+  sync.addEventListener("click", handleSync);
   sync.addEventListener("click", handleSync);
 
   const { syncKey, ids, type } = await fetchList();
   await renderSync(syncKey);
 
-  if (sync.dataset.state === 'valid') renderList(ids, type);
+  if (sync.dataset.state === 'valid' || sync.dataset.state === 'public') {
+    renderList(ids, type);
+    renderCreate();
+  }
 });

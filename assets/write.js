@@ -7,7 +7,7 @@ function id() {
   const searchParams = new URLSearchParams(window.location.search);
   const id = searchParams.get("id");
 
-  return id;
+  return id || 'new';
 }
 
 async function read() {
@@ -18,36 +18,20 @@ async function read() {
   return json;
 }
 
-async function content(injected = {}) {
-  const data = {
-    metadata,
-    entry: window.journaler.password ? await window.journaler.encryptText(write.value) : entry.value,
-  };
-
-  return JSON.stringify({ ...data, ...injected });
+async function content() {
+  return JSON.stringify({
+    id: window.journaler.entry.id,
+    content: window.journaler.entry.visibility === 'private' ? await window.journaler.encryptText(write.value) : entry.value,
+  });
 }
 
-async function create() {
-  const res = await fetch(window.journaler.feedUrl("entry"), {
+async function upsert() {
+  await fetch(window.journaler.feedUrl(`entry`), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: await content(),
-  });
-
-  const { id } = await res.json();
-
-  window.history.pushState({}, "", window.journaler.feedUrl(`/write?id=${id}`));
-}
-
-async function update() {
-  await fetch(window.journaler.feedUrl(entry), {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: await content({ id: id() }),
   });
 }
 
@@ -101,11 +85,11 @@ async function uploadImages() {
   for (const image of pending) {
     const body = {
       id: id(),
-      data: window.journaler.password ? await window.journaler.encryptText(image.src) : image.src,
+      data: window.journaler.entry.visiblity === 'private' ? await window.journaler.encryptText(image.src) : image.src,
     };
 
     promises.push(
-      fetch("/entry/image", {
+      fetch(window.journaler.feedUrl("/entry/image"), {
         method: "POST",
         body: JSON.stringify(body),
         headers: {
@@ -135,44 +119,42 @@ async function displayImage(image) {
 }
 
 async function load() {
-  const { type, visibility, entry, images } = await read();
+  window.journaler.entry = await read();
+  console.log(window.journaler.entry);
 
 
-  if (visibility === "private" && !window.journaler.password) {
+  if (window.journaler.entry.visibility === "private" && !window.journaler.password) {
     window.journaler.requestPassword();
   }
 
-  let entryValue = entry;
+  let content = window.journaler.entry.content
 
-  if (window.journaler.password) {
+  if (window.journaler.entry.visibility === 'private' && content) {
     try {
-      entryValue = await window.journaler.decryptText(entry);
+      content = await window.journaler.decryptText(window.journaler.entry.content);
     } catch (_error) {
       alert("Password incorrect.");
       return;
     }
   }
 
-  write.value = entryValue;
-  for (const image of images) {
+  write.value = content;
+
+  for (const image of window.journaler.entry.images) {
     displayImage(image);
   }
+
+  window.history.pushState({}, "", window.journaler.feedUrl(`write?id=${window.journaler.entry.id}`));
 }
 
 async function save() {
-  const postId = id();
-
-  if (!window.journaler.password && visibility.value === "private") {
+  if (!window.journaler.password && window.journaler.entry.visibility === "private") {
     window.journaler.requestPassword()
   }
 
-  if (postId) {
-    await update(postId);
-  } else {
-    await create();
-  }
-
+  await upsert();
   await uploadImages();
+
   const images = pendingImages();
   for (const image of images) {
     image.classList.remove("pending");
@@ -185,5 +167,5 @@ window.addEventListener("journaler-ready", async () => {
   saveButton.addEventListener("click", save);
   upload.addEventListener("change", queueImage);
 
-  if (id()) load();
+  load();
 });

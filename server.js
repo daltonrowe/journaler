@@ -97,28 +97,33 @@ app.get("/:feed/list", (req, res) => {
 });
 
 app.get("/:feed/entry", (req, res) => {
-  const { id } = req.query;
+  const { id = 'new' } = req.query;
   const { dir } = config.feeds[req.params.feed];
 
-  const entryRoot = path.join(dir, String(id));
-  const entryFile = path.join(dir, String(id), "entry.txt");
-  const entry = fs.readFileSync(entryFile, { encoding: "utf-8" });
+  if (id === 'new') {
+    res.json({ id: Date.now(), content: '', images: [], ...config.feeds[req.params.feed] });
+  } else {
+    const entryRoot = path.join(dir, String(id));
+    const file = path.join(dir, String(id), "content.txt");
+    const content = fs.readFileSync(file, { encoding: "utf-8" });
 
-  const images = fs
-    .readdirSync(entryRoot)
-    .filter((f) => f.startsWith("image_"));
-
-  res.json({ id, entry, images, ...config.feeds[req.params.feed] });
+    const images = fs
+      .readdirSync(entryRoot)
+      .filter((f) => f.startsWith("image_"));
+    res.json({ id, content, images, ...config.feeds[req.params.feed] });
+    return
+  }
 });
 
 app.post("/:feed/entry", (req, res) => {
-  const { entry } = req.body;
+  const { content, id } = req.body;
+  const { dir } = config.feeds[req.params.feed]
 
-  const id = String(Date.now());
-  fs.mkdirSync(path.join(config.dir, id));
+  const entryPath = path.join(dir, String(id))
+  fs.mkdirSync(entryPath);
 
-  const entryFile = path.join(config.dir, id, "entry.txt");
-  fs.writeFileSync(entryFile, entry);
+  const contentFile = path.join(entryPath, "content.txt");
+  fs.writeFileSync(contentFile, content);
 
   res.json({ id });
 });
@@ -132,14 +137,6 @@ app.post("/:feed/entry/image", (req, res) => {
   res.send(200);
 });
 
-app.put("/:feed/entry", (req, res) => {
-  const { id, entry } = req.body;
-
-  const entryFile = path.join(config.dir, id, "entry.txt");
-  fs.writeFileSync(entryFile, entry);
-
-  res.send(200);
-});
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
