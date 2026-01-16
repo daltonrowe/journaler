@@ -1,7 +1,7 @@
 const list = document.querySelector("#list");
 const sync = document.querySelector("#sync");
 
-function formatTitle(_content, type) {
+function formatTitle(id, type) {
   const options = {
     year: "numeric",
     month: "long",
@@ -111,7 +111,7 @@ window.addEventListener("journaler-ready", async () => {
   sync.addEventListener("click", handleSync);
 
   const { syncKey, ids, type } = await fetchList();
-  renderSync(syncKey);
+  await renderSync(syncKey);
 
   if (sync.dataset.state === 'valid') renderList(ids, type);
 });
