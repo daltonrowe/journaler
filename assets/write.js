@@ -90,9 +90,6 @@ async function uploadImages() {
         image.src,
     };
 
-    console.log(window.journaler.entry.visiblity);
-    console.log(body);
-
     promises.push(
       fetch(window.journaler.feedUrl("entry/image"), {
         method: "POST",
@@ -127,7 +124,6 @@ async function displayImage(image) {
 async function load() {
   window.journaler.entry = await read();
   console.log(window.journaler.entry);
-
 
   if (window.journaler.entry.visibility === "private" && !window.journaler.password) {
     window.journaler.requestPassword();

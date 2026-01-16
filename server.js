@@ -73,7 +73,7 @@ app.post("/:feed/syncKey", (req, res) => {
 });
 
 app.get("/:feed/list", (req, res) => {
-  const { dir, visibility, type } = config.feeds[req.params.feed];
+  const { dir, visibility, title } = config.feeds[req.params.feed];
 
   let syncKey = null;
 
@@ -92,7 +92,7 @@ app.get("/:feed/list", (req, res) => {
     fs.statSync(path.join(dir, file)).isDirectory(),
   );
 
-  res.json({ ids: dirs, type, syncKey });
+  res.json({ ids: dirs, title, syncKey });
 });
 
 app.get("/:feed/entry", (req, res) => {

@@ -2,27 +2,33 @@ const list = document.querySelector("#list");
 const sync = document.querySelector("#sync");
 const createNew = document.querySelector("#createNew");
 
-function formatTitle(id, type) {
+function formatTitle(title, titleType) {
   const options = {
     year: "numeric",
     month: "long",
     day: "numeric",
   };
 
-  switch (type) {
+  switch (titleType) {
     case "date":
-      return new Date(parseInt(id, 10)).toLocaleDateString("en-US", options);
+      return new Date(parseInt(title, 10)).toLocaleDateString("en-US", options);
+
+    case "date-slug":
+      const [date, ...slug] = title.split("-")
+
+      const dateTitle = new Date(parseInt(date, 10)).toLocaleDateString("en-US", options);
+      return `${dateTitle}: ${slug.join(' ')}`;
 
     default:
       return "Unknown title format";
   }
 }
 
-function renderList(ids, type) {
+function renderList(ids, titleType) {
   let markup = "";
 
   for (const id of ids) {
-    const title = formatTitle(id, type);
+    const title = formatTitle(id, titleType);
     markup += `<a href="${window.journaler.feedUrl(`write?id=${id}`)}">${title}</a>`;
   }
 
@@ -116,11 +122,11 @@ window.addEventListener("journaler-ready", async () => {
   sync.addEventListener("click", handleSync);
   sync.addEventListener("click", handleSync);
 
-  const { syncKey, ids, type } = await fetchList();
+  const { syncKey, ids, title: titleType } = await fetchList();
   await renderSync(syncKey);
 
   if (sync.dataset.state === 'valid' || sync.dataset.state === 'public') {
-    renderList(ids, type);
+    renderList(ids, titleType);
     renderCreate();
   }
 });

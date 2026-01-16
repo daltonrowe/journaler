@@ -40,7 +40,7 @@ nav {
 
 textarea {
   width: 100%;
-  min-height: 600px;
+  min-height: 400px;
   field-sizing: content;
   background: #333;
   border-radius: 4px;
@@ -98,7 +98,7 @@ ol {
   img {
     display: block;
     aspect-ratio: 1;
-    height: 200px;
+    height: 100px;
     width: auto;
     object-fit: contain;
     background: #333;
