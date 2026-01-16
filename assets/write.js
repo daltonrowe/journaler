@@ -84,7 +84,11 @@ function id() {
 }
 
 async function read() {
-  const res = await fetch(`/entry?id=${id()}`);
+
+  const url = feedUrl(`entry?id=${id()}`);
+  console.log(url);
+
+  const res = await fetch(url);
   const json = await res.json();
 
   return json;
@@ -104,7 +108,8 @@ async function content(injected = {}) {
 }
 
 async function create() {
-  const res = await fetch("/entry", {
+
+  const res = await fetch(feedUrl('entry'), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -114,11 +119,11 @@ async function create() {
 
   const { id } = await res.json();
 
-  window.history.pushState({}, "", `/write?id=${id}`);
+  window.history.pushState({}, "", feedUrl(`/write?id=${id}`));
 }
 
 async function update() {
-  await fetch("/entry", {
+  await fetch(feedUrl(entry), {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",

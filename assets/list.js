@@ -14,14 +14,15 @@ function renderList(ids) {
       "en-US",
       options,
     );
-    markup += `<a href="write?id=${id}">${title}</a>`;
+
+    markup += `<a href="${feedUrl(`write?id=${id}`)}">${title}</a>`;
   }
 
   list.innerHTML = markup;
 }
 
 async function fetchList() {
-  const res = await fetch("/list");
+  const res = await fetch(feedUrl('list'));
   const ids = await res.json();
 
   return ids;
