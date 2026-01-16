@@ -7,23 +7,25 @@ import spawnAndLog from "./lib/spawnAndLog.js";
 
 export const root = import.meta.dirname;
 
-export const config = JSON.parse(fs.readFileSync(path.join(root, "env.json"), "utf8"));
+export const config = JSON.parse(
+  fs.readFileSync(path.join(root, "env.json"), "utf8"),
+);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json({ limit: "5mb" }));
 app.use(express.static(path.join(root, "assets")));
-app.use(express.static(path.join(root, 'assets')));
+app.use(express.static(path.join(root, "assets")));
 
 app.get("/", sendView);
 app.get("/publish", sendView);
 
 app.get("/feeds", async (_req, res) => {
-  const feeds = Object.keys(config.feeds).map(id => ({
+  const feeds = Object.keys(config.feeds).map((id) => ({
     id,
-    ...config.feeds[id]
-  }))
+    ...config.feeds[id],
+  }));
 
   res.json({ feeds });
 });
@@ -46,46 +48,42 @@ app.post("/publish", async (_req, res) => {
 });
 
 app.get("/:feed", (_req, res) => {
-  const html = template('list')
-  res.send(html)
+  const html = template("list");
+  res.send(html);
 });
 
 app.get("/:feed/write", (_req, res) => {
-  const html = template('write')
-  res.send(html)
+  const html = template("write");
+  res.send(html);
 });
 
 app.post("/:feed/syncKey", (req, res) => {
-  const { encrypted } = req.body
-  const { feed } = req.params
+  const { encrypted } = req.body;
+  const { feed } = req.params;
 
   const { dir } = config.feeds[feed];
-  console.log(encrypted);
 
-  const syncKeyPath = path.join(dir, 'sync.txt');
-
-  console.log(encrypted);
-
+  const syncKeyPath = path.join(dir, "sync.txt");
 
   fs.writeFileSync(syncKeyPath, encrypted, {
-    encoding: 'UTF-8',
-    flag: 'wx'
-  })
+    encoding: "UTF-8",
+    flag: "wx",
+  });
 
-  res.send(200)
+  res.send(200);
 });
 
 app.get("/:feed/list", (req, res) => {
-  const { dir, visibility } = config.feeds[req.params.feed];
+  const { dir, visibility, type } = config.feeds[req.params.feed];
 
   let syncKey = null;
 
-  if (visibility === 'private') {
+  if (visibility === "private") {
     try {
-      syncKey = fs.readFileSync(path.join(dir, 'sync.txt'), {
-        encoding: 'UTF-8'
+      syncKey = fs.readFileSync(path.join(dir, "sync.txt"), {
+        encoding: "UTF-8",
       });
-    } catch (error) {
+    } catch (_error) {
       syncKey = false;
     }
   }
@@ -95,7 +93,7 @@ app.get("/:feed/list", (req, res) => {
     fs.statSync(path.join(dir, file)).isDirectory(),
   );
 
-  res.json({ ids: dirs, syncKey });
+  res.json({ ids: dirs, type, syncKey });
 });
 
 app.get("/:feed/entry", (req, res) => {

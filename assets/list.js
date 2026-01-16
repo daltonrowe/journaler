@@ -1,94 +1,106 @@
 const list = document.querySelector("#list");
 const sync = document.querySelector("#sync");
 
-function renderList(ids) {
-  let markup = "";
-
+function formatTitle(_content, type) {
   const options = {
     year: "numeric",
     month: "long",
     day: "numeric",
   };
 
-  for (const id of ids) {
-    const title = new Date(parseInt(id, 10)).toLocaleDateString(
-      "en-US",
-      options,
-    );
+  switch (type) {
+    case "date":
+      return new Date(parseInt(id, 10)).toLocaleDateString("en-US", options);
 
-    markup += `<a href="${feedUrl(`write?id=${id}`)}">${title}</a>`;
+    default:
+      return "Unknown title format";
+  }
+}
+
+function renderList(ids, type) {
+  let markup = "";
+
+  for (const id of ids) {
+    const title = formatTitle(id, type);
+    markup += `<a href="${window.journaler.feedUrl(`write?id=${id}`)}">${title}</a>`;
   }
 
   list.innerHTML = markup;
 }
 
 async function fetchList() {
-  const res = await fetch(feedUrl('list'));
+  const res = await fetch(window.journaler.feedUrl("list"));
   const data = await res.json();
 
   return data;
 }
 
 async function renderSync(syncKey) {
-  console.log(syncKey);
-
   if (syncKey === false) {
-    sync.innerHTML = 'ℹ️ Sync key not found. Click to create.'
-    sync.dataset.state = 'not-found'
+    sync.innerHTML = "ℹ️ Sync key not found. Click to create.";
+    sync.dataset.state = "not-found";
     return;
   }
 
   if (syncKey === null) {
-    sync.innerHTML = '🔓 Public feed directory.'
-    sync.dataset.state = 'public'
+    sync.innerHTML = "🔓 Public feed directory.";
+    sync.dataset.state = "public";
     return;
   }
 
-  if (syncKey && password) {
+  if (syncKey && window.journaler.password) {
     try {
-      await decryptText(syncKey)
-      sync.innerHTML = '✅ Decryption key valid.';
-      sync.dataset.state = 'valid'
-    } catch (error) {
-      sync.innerHTML = '‼️ Decryption key invalid.';
-      sync.dataset.state = 'invalid'
+      await window.journaler.decryptText(syncKey);
+      sync.innerHTML = "✅ Decryption key valid.";
+      sync.dataset.state = "valid";
+    } catch (_error) {
+      sync.innerHTML = "‼️ Decryption key invalid.";
+      sync.dataset.state = "invalid";
     }
   }
 
-  if (syncKey && !password) {
-    sync.innerHTML = '🔐 Sync key found, awaiting password.'
-    sync.dataset.state = 'found'
+  if (syncKey && !window.journaler.password) {
+    sync.innerHTML = "🔐 Sync key found, awaiting password.";
+    sync.dataset.state = "found";
   }
 }
 
 async function handleSync() {
   switch (sync.dataset.state) {
-    case 'not-found': {
-      const material = prompt('Enter sync key material:')
-      password = prompt('Create new password for feed:')
+    case "not-found":
+      {
+        const material = prompt("Enter sync key material:");
+        window.journaler.createPassword();
 
-      const encrypted = await encryptText(material)
+        const encrypted = await window.journaler.encryptText(material);
 
-      await fetch(feedUrl('syncKey'), {
-        method: 'POST',
-        body: JSON.stringify({ encrypted }),
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      })
+        await fetch(window.journaler.feedUrl("syncKey"), {
+          method: "POST",
+          body: JSON.stringify({ encrypted }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
 
-      window.location.reload();
-    }
+        window.location.reload();
+      }
       break;
 
-    case 'found': {
-      loadPassword();
-      window.location.reload();
-    }
+    case "found":
+      {
+        window.journaler.requestPassword();
+        window.location.reload();
+      }
+      break;
+
+    case "invalid":
+      {
+        alert("Get in there and fix it big boy.");
+      }
       break;
 
     default:
-      alert("Unknown sync key state!")
+      alert("Unknown sync key state!");
       break;
   }
 }
@@ -96,9 +108,10 @@ async function handleSync() {
 window.addEventListener("journaler-ready", async () => {
   if (!list) return;
 
-  sync.addEventListener('click', handleSync)
+  sync.addEventListener("click", handleSync);
 
-  const { syncKey, ids } = await fetchList();
-  renderList(ids);
+  const { syncKey, ids, type } = await fetchList();
   renderSync(syncKey);
+
+  if (sync.dataset.state === 'valid') renderList(ids, type);
 });

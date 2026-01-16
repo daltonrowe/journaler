@@ -11,7 +11,7 @@ function id() {
 }
 
 async function read() {
-  const url = feedUrl(`entry?id=${id()}`);
+  const url = window.journaler.feedUrl(`entry?id=${id()}`);
   const res = await fetch(url);
   const json = await res.json();
 
@@ -25,15 +25,14 @@ async function content(injected = {}) {
 
   const data = {
     metadata,
-    entry: password ? await encryptText(write.value) : entry.value,
+    entry: window.journaler.password ? await window.journaler.encryptText(write.value) : entry.value,
   };
 
   return JSON.stringify({ ...data, ...injected });
 }
 
 async function create() {
-
-  const res = await fetch(feedUrl('entry'), {
+  const res = await fetch(window.journaler.feedUrl("entry"), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -43,11 +42,11 @@ async function create() {
 
   const { id } = await res.json();
 
-  window.history.pushState({}, "", feedUrl(`/write?id=${id}`));
+  window.history.pushState({}, "", window.journaler.feedUrl(`/write?id=${id}`));
 }
 
 async function update() {
-  await fetch(feedUrl(entry), {
+  await fetch(window.journaler.feedUrl(entry), {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -106,7 +105,7 @@ async function uploadImages() {
   for (const image of pending) {
     const body = {
       id: id(),
-      data: password ? await encryptText(image.src) : image.src,
+      data: window.journaler.password ? await window.journaler.encryptText(image.src) : image.src,
     };
 
     promises.push(
@@ -130,8 +129,8 @@ async function displayImage(image) {
   const res = await fetch(`/${id()}/${image}`);
   const data = await res.text();
 
-  if (password) {
-    img.src = await decryptText(data);
+  if (window.journaler.password) {
+    img.src = await window.journaler.decryptText(data);
   } else {
     img.src = data;
   }
@@ -143,14 +142,14 @@ async function load() {
   const { metadata, entry, images } = await read();
 
   if (metadata.visibility === "private") {
-    password = prompt("Enter private password:");
+    window.journaler.requestPassword();
   }
 
   let entryValue = entry;
 
-  if (password) {
+  if (window.journaler.password) {
     try {
-      entryValue = await decryptText(entry);
+      entryValue = await window.journaler.decryptText(entry);
     } catch (_error) {
       alert("Password incorrect.");
       return;
@@ -166,8 +165,8 @@ async function load() {
 async function save() {
   const postId = id();
 
-  if (!password && visibility.value === "private") {
-    password = prompt("Enter private password:");
+  if (!window.journaler.password && visibility.value === "private") {
+    window.journaler.requestPassword()
   }
 
   if (postId) {
