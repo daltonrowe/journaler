@@ -7,14 +7,14 @@ import spawnAndLog from "./lib/spawnAndLog.js";
 
 export const root = import.meta.dirname;
 
-const config = JSON.parse(fs.readFileSync(path.join(root, "env.json"), "utf8"));
+export const config = JSON.parse(fs.readFileSync(path.join(root, "env.json"), "utf8"));
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json({ limit: "5mb" }));
 app.use(express.static(path.join(root, "assets")));
-app.use(express.static(config.dir));
+app.use(express.static(path.join(root, 'assets')));
 
 app.get("/", sendView);
 app.get("/publish", sendView);
@@ -55,25 +55,56 @@ app.get("/:feed/write", (_req, res) => {
   res.send(html)
 });
 
+app.post("/:feed/syncKey", (req, res) => {
+  const { encrypted } = req.body
+  const { feed } = req.params
 
-app.get("/:feed/list", (_req, res) => {
-  console.log('hey!');
+  const { dir } = config.feeds[feed];
+  console.log(encrypted);
 
-  const dir = path.join(config.dir);
+  const syncKeyPath = path.join(dir, 'sync.txt');
+
+  console.log(encrypted);
+
+
+  fs.writeFileSync(syncKeyPath, encrypted, {
+    encoding: 'UTF-8',
+    flag: 'wx'
+  })
+
+  res.send(200)
+});
+
+app.get("/:feed/list", (req, res) => {
+  const { dir, visibility } = config.feeds[req.params.feed];
+
+  let syncKey = null;
+
+  if (visibility === 'private') {
+    try {
+      syncKey = fs.readFileSync(path.join(dir, 'sync.txt'), {
+        encoding: 'UTF-8'
+      });
+    } catch (error) {
+      syncKey = false;
+    }
+  }
+
   const files = fs.readdirSync(dir);
   const dirs = files.filter((file) =>
     fs.statSync(path.join(dir, file)).isDirectory(),
   );
 
-  res.json(dirs);
+  res.json({ ids: dirs, syncKey });
 });
 
 app.get("/:feed/entry", (req, res) => {
   const { id } = req.query;
+  const { dir } = config.feeds[req.params.feed];
 
-  const entryRoot = path.join(config.dir, id);
-  const entryFile = path.join(config.dir, String(id), "entry.txt");
-  const metadataFile = path.join(config.dir, String(id), "metadata.json");
+  const entryRoot = path.join(dir, id);
+  const entryFile = path.join(dir, String(id), "entry.txt");
+  const metadataFile = path.join(dir, String(id), "metadata.json");
 
   const entry = fs.readFileSync(entryFile, { encoding: "utf-8" });
   const metadata = JSON.parse(
