@@ -16,7 +16,6 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json({ limit: "5mb" }));
 app.use(express.static(path.join(root, "assets")));
-app.use(express.static(path.join(root, "assets")));
 
 app.get("/", sendView);
 app.get("/publish", sendView);
@@ -120,7 +119,12 @@ app.post("/:feed/entry", (req, res) => {
   const { dir } = config.feeds[req.params.feed]
 
   const entryPath = path.join(dir, String(id))
-  fs.mkdirSync(entryPath);
+
+  try {
+    fs.mkdirSync(entryPath);
+  } catch (error) {
+    // already exists
+  }
 
   const contentFile = path.join(entryPath, "content.txt");
   fs.writeFileSync(contentFile, content);
@@ -128,10 +132,21 @@ app.post("/:feed/entry", (req, res) => {
   res.json({ id });
 });
 
+app.get("/:feed/entry/image", (req, res) => {
+  const { id, imageId } = req.query;
+  const { dir } = config.feeds[req.params.feed]
+
+  const imageFile = path.join(dir, id, imageId);
+  const data = fs.readFileSync(imageFile);
+
+  res.send(data);
+});
+
 app.post("/:feed/entry/image", (req, res) => {
   const { id, data } = req.body;
+  const { dir } = config.feeds[req.params.feed]
 
-  const imageFile = path.join(config.dir, id, `image_${alphaId()}`);
+  const imageFile = path.join(dir, id, `image_${alphaId()}`);
   fs.writeFileSync(imageFile, data);
 
   res.send(200);

@@ -85,11 +85,16 @@ async function uploadImages() {
   for (const image of pending) {
     const body = {
       id: id(),
-      data: window.journaler.entry.visiblity === 'private' ? await window.journaler.encryptText(image.src) : image.src,
+      data: window.journaler.entry.visibility === 'private' ?
+        await window.journaler.encryptText(image.src) :
+        image.src,
     };
 
+    console.log(window.journaler.entry.visiblity);
+    console.log(body);
+
     promises.push(
-      fetch(window.journaler.feedUrl("/entry/image"), {
+      fetch(window.journaler.feedUrl("entry/image"), {
         method: "POST",
         body: JSON.stringify(body),
         headers: {
@@ -106,10 +111,11 @@ async function displayImage(image) {
   const img = document.createElement("img");
   img.title = image;
 
-  const res = await fetch(`/${id()}/${image}`);
+  const res = await fetch(window.journaler.feedUrl(`entry/image/?id=${id()}&imageId=${image}`));
   const data = await res.text();
 
-  if (window.journaler.password) {
+
+  if (window.journaler.entry.visibility === 'private') {
     img.src = await window.journaler.decryptText(data);
   } else {
     img.src = data;
