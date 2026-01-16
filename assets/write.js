@@ -1,13 +1,13 @@
 const saveButton = document.querySelector("#save");
 const entry = document.querySelector("#write");
 const upload = document.querySelector("#upload");
-const visibility = document.querySelector("#visibility");
+const _visibility = document.querySelector("#visibility");
 
 function id() {
   const searchParams = new URLSearchParams(window.location.search);
   const id = searchParams.get("id");
 
-  return id || 'new';
+  return id || "new";
 }
 
 async function read() {
@@ -21,7 +21,10 @@ async function read() {
 async function content() {
   return JSON.stringify({
     id: window.journaler.entry.id,
-    content: window.journaler.entry.visibility === 'private' ? await window.journaler.encryptText(write.value) : entry.value,
+    content:
+      window.journaler.entry.visibility === "private"
+        ? await window.journaler.encryptText(write.value)
+        : entry.value,
   });
 }
 
@@ -85,9 +88,10 @@ async function uploadImages() {
   for (const image of pending) {
     const body = {
       id: id(),
-      data: window.journaler.entry.visibility === 'private' ?
-        await window.journaler.encryptText(image.src) :
-        image.src,
+      data:
+        window.journaler.entry.visibility === "private"
+          ? await window.journaler.encryptText(image.src)
+          : image.src,
     };
 
     promises.push(
@@ -108,11 +112,12 @@ async function displayImage(image) {
   const img = document.createElement("img");
   img.title = image;
 
-  const res = await fetch(window.journaler.feedUrl(`entry/image/?id=${id()}&imageId=${image}`));
+  const res = await fetch(
+    window.journaler.feedUrl(`entry/image/?id=${id()}&imageId=${image}`),
+  );
   const data = await res.text();
 
-
-  if (window.journaler.entry.visibility === 'private') {
+  if (window.journaler.entry.visibility === "private") {
     img.src = await window.journaler.decryptText(data);
   } else {
     img.src = data;
@@ -125,15 +130,20 @@ async function load() {
   window.journaler.entry = await read();
   console.log(window.journaler.entry);
 
-  if (window.journaler.entry.visibility === "private" && !window.journaler.password) {
+  if (
+    window.journaler.entry.visibility === "private" &&
+    !window.journaler.password
+  ) {
     window.journaler.requestPassword();
   }
 
-  let content = window.journaler.entry.content
+  let content = window.journaler.entry.content;
 
-  if (window.journaler.entry.visibility === 'private' && content) {
+  if (window.journaler.entry.visibility === "private" && content) {
     try {
-      content = await window.journaler.decryptText(window.journaler.entry.content);
+      content = await window.journaler.decryptText(
+        window.journaler.entry.content,
+      );
     } catch (_error) {
       alert("Password incorrect.");
       return;
@@ -146,12 +156,19 @@ async function load() {
     displayImage(image);
   }
 
-  window.history.pushState({}, "", window.journaler.feedUrl(`write?id=${window.journaler.entry.id}`));
+  window.history.pushState(
+    {},
+    "",
+    window.journaler.feedUrl(`write?id=${window.journaler.entry.id}`),
+  );
 }
 
 async function save() {
-  if (!window.journaler.password && window.journaler.entry.visibility === "private") {
-    window.journaler.requestPassword()
+  if (
+    !window.journaler.password &&
+    window.journaler.entry.visibility === "private"
+  ) {
+    window.journaler.requestPassword();
   }
 
   await upsert();

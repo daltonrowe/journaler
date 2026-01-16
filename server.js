@@ -18,7 +18,6 @@ app.use(express.json({ limit: "5mb" }));
 app.use(express.static(path.join(root, "assets")));
 
 app.get("/", sendView);
-app.get("/publish", sendView);
 
 app.get("/feeds", async (_req, res) => {
   const feeds = Object.keys(config.feeds).map((id) => ({
@@ -29,19 +28,30 @@ app.get("/feeds", async (_req, res) => {
   res.json({ feeds });
 });
 
-app.get("/staged", async (_req, res) => {
+app.get("/:feed/publish", (req, res) => {
+  const html = template("publish");
+  res.send(html);
+});
+
+app.get("/:feed/staged", async (req, res) => {
+  console.log(req.params.feed);
+
+  const { repo } = config.feeds[req.params.feed];
+
   const data = await spawnAndLog(
     "git add . && git diff --name-only --staged",
-    config.repo,
+    repo,
   );
   const files = data.split("\n").filter((d) => !!d);
   res.json({ files });
 });
 
-app.post("/publish", async (_req, res) => {
+app.post("/:feed/publish", async (req, res) => {
+  const { repo } = config.feeds[req.params.feed];
+
   const stdout = await spawnAndLog(
     `git commit -m 'Journaler Publish ${Date.now()}' && git push`,
-    config.repo,
+    repo,
   );
   res.json({ stdout });
 });
@@ -96,11 +106,16 @@ app.get("/:feed/list", (req, res) => {
 });
 
 app.get("/:feed/entry", (req, res) => {
-  const { id = 'new' } = req.query;
+  const { id = "new" } = req.query;
   const { dir } = config.feeds[req.params.feed];
 
-  if (id === 'new') {
-    res.json({ id: Date.now(), content: '', images: [], ...config.feeds[req.params.feed] });
+  if (id === "new") {
+    res.json({
+      id: Date.now(),
+      content: "",
+      images: [],
+      ...config.feeds[req.params.feed],
+    });
   } else {
     const entryRoot = path.join(dir, String(id));
     const file = path.join(dir, String(id), "content.txt");
@@ -110,19 +125,19 @@ app.get("/:feed/entry", (req, res) => {
       .readdirSync(entryRoot)
       .filter((f) => f.startsWith("image_"));
     res.json({ id, content, images, ...config.feeds[req.params.feed] });
-    return
+    return;
   }
 });
 
 app.post("/:feed/entry", (req, res) => {
   const { content, id } = req.body;
-  const { dir } = config.feeds[req.params.feed]
+  const { dir } = config.feeds[req.params.feed];
 
-  const entryPath = path.join(dir, String(id))
+  const entryPath = path.join(dir, String(id));
 
   try {
     fs.mkdirSync(entryPath);
-  } catch (error) {
+  } catch (_error) {
     // already exists
   }
 
@@ -134,7 +149,7 @@ app.post("/:feed/entry", (req, res) => {
 
 app.get("/:feed/entry/image", (req, res) => {
   const { id, imageId } = req.query;
-  const { dir } = config.feeds[req.params.feed]
+  const { dir } = config.feeds[req.params.feed];
 
   const imageFile = path.join(dir, id, imageId);
   const data = fs.readFileSync(imageFile);
@@ -144,14 +159,13 @@ app.get("/:feed/entry/image", (req, res) => {
 
 app.post("/:feed/entry/image", (req, res) => {
   const { id, data } = req.body;
-  const { dir } = config.feeds[req.params.feed]
+  const { dir } = config.feeds[req.params.feed];
 
   const imageFile = path.join(dir, id, `image_${alphaId()}`);
   fs.writeFileSync(imageFile, data);
 
   res.send(200);
 });
-
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

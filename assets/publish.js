@@ -2,7 +2,9 @@ const staged = document.querySelector("#staged");
 const publish = document.querySelector("#publish");
 
 async function publishStaged() {
-  const res = await fetch("/publish", { method: "POST" });
+  const res = await fetch(window.journaler.feedUrl("publish"), {
+    method: "POST",
+  });
   const data = await res.json();
 
   return data;
@@ -17,7 +19,7 @@ async function handlePublish() {
 }
 
 async function fetchStaged() {
-  const res = await fetch("/staged");
+  const res = await fetch(window.journaler.feedUrl("staged"));
   const { files } = await res.json();
 
   return files;

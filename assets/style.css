@@ -23,6 +23,7 @@ body {
   padding: 10px;
   height: 0;
   display: flex;
+  font-size: 18px;
   flex-direction: column;
   gap: 6px;
   background: #222;
@@ -108,4 +109,23 @@ ol {
   .pending {
     animation: pulse 2s ease-in-out infinite;
   }
+}
+
+#feeds {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.feed {
+  padding: 10px;
+  border: 1px solid lightblue;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.feed > div {
+  display: flex;
+  gap: 10px;
 }

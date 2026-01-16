@@ -13,11 +13,15 @@ function formatTitle(title, titleType) {
     case "date":
       return new Date(parseInt(title, 10)).toLocaleDateString("en-US", options);
 
-    case "date-slug":
-      const [date, ...slug] = title.split("-")
+    case "date-slug": {
+      const [date, ...slug] = title.split("-");
 
-      const dateTitle = new Date(parseInt(date, 10)).toLocaleDateString("en-US", options);
-      return `${dateTitle}: ${slug.join(' ')}`;
+      const dateTitle = new Date(parseInt(date, 10)).toLocaleDateString(
+        "en-US",
+        options,
+      );
+      return `${dateTitle}: ${slug.join(" ")}`;
+    }
 
     default:
       return "Unknown title format";
@@ -113,7 +117,7 @@ async function handleSync() {
 }
 
 function renderCreate() {
-  createNew.innerHTML = `<a href="${window.journaler.feedUrl('write')}">Create New</a>`
+  createNew.innerHTML = `<a href="${window.journaler.feedUrl("write")}">Create New</a>`;
 }
 
 window.addEventListener("journaler-ready", async () => {
@@ -125,7 +129,7 @@ window.addEventListener("journaler-ready", async () => {
   const { syncKey, ids, title: titleType } = await fetchList();
   await renderSync(syncKey);
 
-  if (sync.dataset.state === 'valid' || sync.dataset.state === 'public') {
+  if (sync.dataset.state === "valid" || sync.dataset.state === "public") {
     renderList(ids, titleType);
     renderCreate();
   }

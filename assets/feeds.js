@@ -4,7 +4,16 @@ function renderFeeds(data) {
   let markup = "";
 
   for (const feed of data) {
-    markup += `<a href="/${feed.id}/">${feed.id}</a>`;
+    markup += `
+    <div class="feed">
+    <strong>${feed.id}</strong>
+    <div>
+      <a href="/${feed.id}/write">New</a>
+      <a href="/${feed.id}/">List</a>
+      <a href="/${feed.id}/publish">Publish</a>
+      </div>
+    </div>
+    `;
   }
 
   feeds.innerHTML = markup;
