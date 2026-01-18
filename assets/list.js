@@ -80,7 +80,7 @@ async function handleSync() {
   switch (sync.dataset.state) {
     case "not-found":
       {
-        const material = window.journaler.generateKeyMaterial()
+        const material = window.journaler.generateKeyMaterial();
         window.journaler.createPassword();
 
         const encrypted = await window.journaler.encryptText(material);

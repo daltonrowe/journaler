@@ -121,8 +121,9 @@ window.journaler.dumpPassword = () => {
 };
 
 window.journaler.generateKeyMaterial = () => {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_+=-@#$%^&*()<>?/`~|{}[]';
+  const chars =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_+=-@#$%^&*()<>?/`~|{}[]";
   const array = new Uint8Array(256);
   crypto.getRandomValues(array);
-  return Array.from(array, (byte) => chars[byte % chars.length]).join('');
-}
+  return Array.from(array, (byte) => chars[byte % chars.length]).join("");
+};

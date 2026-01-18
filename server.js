@@ -28,7 +28,7 @@ app.get("/feeds", async (_req, res) => {
   res.json({ feeds });
 });
 
-app.get("/:feed/publish", (req, res) => {
+app.get("/:feed/publish", (_req, res) => {
   const html = template("publish");
   res.send(html);
 });
@@ -62,12 +62,13 @@ app.get("/:feed", (_req, res) => {
 app.get("/:feed/write", (req, res) => {
   const { format } = config.feeds[req.params.feed];
 
-  let templateType = 'write';
+  let templateType = "write";
 
   switch (format) {
-    case 'markdown-ish': {
-      templateType = 'write-md'
-    }
+    case "markdown-ish":
+      {
+        templateType = "write-md";
+      }
       break;
 
     default:
@@ -174,7 +175,11 @@ app.post("/:feed/entry/image", (req, res) => {
   const { id, data, width, height } = req.body;
   const { dir } = config.feeds[req.params.feed];
 
-  const imageFile = path.join(dir, id, `image_${alphaId()}--${width}x${height}`);
+  const imageFile = path.join(
+    dir,
+    id,
+    `image_${alphaId()}--${width}x${height}`,
+  );
   fs.writeFileSync(imageFile, data);
 
   res.send(200);

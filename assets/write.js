@@ -126,6 +126,21 @@ async function displayImage(image) {
   images.appendChild(img);
 }
 
+function insertImage(event) {
+  if (event.target instanceof HTMLImageElement) {
+    const start = entry.selectionStart;
+    const end = entry.selectionEnd;
+    const lineStart = entry.value.lastIndexOf("\n", start - 1) + 1;
+    const col = start - lineStart;
+    const prefix = col === 0 ? "" : "\n\n";
+    const markdown = `${prefix}![](${event.target.id})\n\n`;
+    entry.value =
+      entry.value.substring(0, start) + markdown + entry.value.substring(end);
+    entry.selectionStart = entry.selectionEnd = start + markdown.length;
+    entry.focus();
+  }
+}
+
 async function load() {
   window.journaler.entry = await read();
 
@@ -187,6 +202,7 @@ window.addEventListener("journaler-ready", async () => {
 
   saveButton.addEventListener("click", save);
   upload.addEventListener("change", queueImage);
+  images.addEventListener("click", insertImage);
 
   load();
 });
