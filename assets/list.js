@@ -65,7 +65,7 @@ async function renderSync(syncKey) {
       sync.innerHTML = "✅ Decryption key valid.";
       sync.dataset.state = "valid";
     } catch (_error) {
-      sync.innerHTML = "‼️ Decryption key invalid.";
+      sync.innerHTML = "‼️ Decryption key invalid. Click to reset.";
       sync.dataset.state = "invalid";
     }
   }
@@ -106,7 +106,8 @@ async function handleSync() {
 
     case "invalid":
       {
-        alert("Get in there and fix it big boy.");
+        window.journaler.dumpPassword();
+        window.location.reload();
       }
       break;
 

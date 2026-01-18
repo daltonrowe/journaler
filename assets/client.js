@@ -116,6 +116,10 @@ window.journaler.loadPassword = () => {
   );
 };
 
+window.journaler.dumpPassword = () => {
+  sessionStorage.removeItem(window.journaler.sessionKey());
+};
+
 window.journaler.generateKeyMaterial = () => {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_+=-@#$%^&*()<>?/`~|{}[]';
   const array = new Uint8Array(256);
