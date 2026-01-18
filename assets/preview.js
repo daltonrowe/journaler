@@ -3,44 +3,52 @@ const write = document.querySelector('#write');
 
 let debounce;
 
+const toId = (text) => text.slice(0, 16).replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+const escapeHtml = (text) => text.replace(/[\u00A0-\u9999<>\&]/g, i => '&#' + i.charCodeAt(0) + ';');
+
+const parseInline = (text) => text
+  .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
+  .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+  .replace(/\*([^*]+)\*/g, '<em>$1</em>');
+
+const parseImage = (text) => text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, title, id) => {
+  const imgEl = document.getElementById(id);
+  const src = imgEl ? imgEl.src : '';
+  const sizeMatch = id.match(/--(\d+)x(\d+)$/);
+  const dims = sizeMatch ? ` width="${sizeMatch[1]}" height="${sizeMatch[2]}"` : '';
+  return `<figure><img data-ref="${id}" src="${src}" title="${title}"${dims}><figcaption>${title}</figcaption></figure>`;
+});
+
+const lineTypes = [
+  [/^```$/, 'code-fence'],
+  [/^-- /, 'list-detail'],
+  [/^- /, 'list'],
+  [/^> /, 'blockquote'],
+  [/^### /, 'h3'],
+  [/^## /, 'h2'],
+  [/^# /, 'h1'],
+  [/^!\[[^\]]*\]\([^)]+\)$/, 'image'],
+];
+
 const renderPreview = () => {
-  const content = write.value;
-  const lines = content.split('\n');
-
-  const toId = (text) => text.slice(0, 16).replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
-  const parseBold = (text) => text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-  const parseItalic = (text) => text.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-  const parseLinks = (text) => parseItalic(parseBold(text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')));
-  const parseImages = (text) => text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, title, id) => {
-    const imgEl = document.getElementById(id);
-    const src = imgEl ? imgEl.src : '';
-    const sizeMatch = id.match(/--(\d+)x(\d+)$/);
-    const dims = sizeMatch ? ` width="${sizeMatch[1]}" height="${sizeMatch[2]}"` : '';
-    return `<figure><img data-ref="${id}" src="${src}" title="${title}"${dims}><figcaption>${title}</figcaption></figure>`;
-  });
-
+  const lines = write.value.split('\n');
   const result = [];
   let inList = false;
   let inCode = false;
   let prevEmpty = true;
 
   const getLineType = (line) => {
-    if (line === '```') return 'code-fence';
-    if (inCode) return 'code';
-    if (line.startsWith('-- ')) return 'list-detail';
-    if (line.startsWith('- ')) return 'list';
-    if (line.startsWith('> ')) return 'blockquote';
-    if (line.startsWith('### ')) return 'h3';
-    if (line.startsWith('## ')) return 'h2';
-    if (line.startsWith('# ')) return 'h1';
-    if (/^!\[[^\]]*\]\([^)]+\)$/.test(line)) return 'image';
+    if (inCode && line !== '```') return 'code';
+    for (const [pattern, type] of lineTypes) {
+      if (pattern.test(line)) return type;
+    }
     return 'text';
   };
 
   for (const line of lines) {
     const type = getLineType(line);
 
-    if (type !== 'list' && inList) {
+    if (type !== 'list' && type !== 'list-detail' && inList) {
       result.push('</ul>');
       inList = false;
     }
@@ -49,7 +57,7 @@ const renderPreview = () => {
       case 'list-detail': {
         const lastIndex = result.length - 1;
         if (lastIndex >= 0 && result[lastIndex].endsWith('</li>')) {
-          result[lastIndex] = result[lastIndex].slice(0, -5) + `<small>${parseLinks(line.slice(3))}</small></li>`;
+          result[lastIndex] = result[lastIndex].slice(0, -5) + `<small>${parseInline(line.slice(3))}</small></li>`;
         }
         break;
       }
@@ -58,71 +66,52 @@ const renderPreview = () => {
           result.push('<ul>');
           inList = true;
         }
-        const listContent = line.slice(2);
-        const iconMatch = listContent.match(/^([^a-zA-Z0-9\s]+)\s+(.*)$/);
+        const content = line.slice(2);
+        const iconMatch = content.match(/^([^a-zA-Z0-9\s]+)\s+(.*)$/);
         if (iconMatch) {
-          result.push(`<li><span class="icon">${iconMatch[1]}</span> ${parseLinks(iconMatch[2])}</li>`);
+          result.push(`<li><span class="icon">${iconMatch[1]}</span> ${parseInline(iconMatch[2])}</li>`);
         } else {
-          result.push(`<li>${parseLinks(listContent)}</li>`);
+          result.push(`<li>${parseInline(content)}</li>`);
         }
         break;
       }
+      case 'h1':
+      case 'h2':
       case 'h3': {
-        const text = line.slice(4);
-        result.push(`<h3 id="${toId(text)}">${parseLinks(text)}</h3>`);
-        break;
-      }
-      case 'h2': {
-        const text = line.slice(3);
-        result.push(`<h2 id="${toId(text)}">${parseLinks(text)}</h2>`);
-        break;
-      }
-      case 'h1': {
-        const text = line.slice(2);
-        result.push(`<h1 id="${toId(text)}">${parseLinks(text)}</h1>`);
+        const level = type[1];
+        const text = line.slice(parseInt(level) + 1);
+        result.push(`<${type} id="${toId(text)}">${parseInline(text)}</${type}>`);
         break;
       }
       case 'image':
-        result.push(parseImages(line));
+        result.push(parseImage(line));
         break;
       case 'blockquote':
-        result.push(`<blockquote>${parseLinks(line.slice(2))}</blockquote>`);
+        result.push(`<blockquote>${parseInline(line.slice(2))}</blockquote>`);
         break;
       case 'code-fence':
-        if (inCode) {
-          result.push('</code>');
-          inCode = false;
-        } else {
-          result.push('<code>');
-          inCode = true;
-        }
+        result.push(inCode ? '</code>' : '<code>');
+        inCode = !inCode;
         break;
       case 'code':
-        result.push(line.replace(/[\u00A0-\u9999<>\&]/g, i => '&#' + i.charCodeAt(0) + ';'));
+        result.push(escapeHtml(line));
         break;
       default:
         if (line === '') {
           prevEmpty = true;
         } else if (prevEmpty) {
-          result.push(`<p>${parseLinks(line)}</p>`);
+          result.push(`<p>${parseInline(line)}</p>`);
           prevEmpty = false;
         } else {
-          result.push(parseLinks(line));
+          result.push(parseInline(line));
         }
     }
   }
 
-  if (inList) {
-    result.push('</ul>');
-  }
+  if (inList) result.push('</ul>');
+  if (inCode) result.push('</code>');
 
-  if (inCode) {
-    result.push('</code>');
-  }
-
-  const markup = result.join('\n');
-
-  preview.innerHTML = markup;
+  preview.innerHTML = result.join('\n');
 }
 
 const debouncedRenderPreview = () => {
