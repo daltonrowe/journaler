@@ -131,6 +131,14 @@ ol {
 }
 
 #preview {
+  img {
+    object-fit: contain;
+    width: 100%;
+    height: auto;
+    max-height: 200px;
+    background: #333;
+  }
+
   *::before {
     display: block;
     font-size: 8px;
