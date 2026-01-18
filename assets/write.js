@@ -110,7 +110,7 @@ async function uploadImages() {
 
 async function displayImage(image) {
   const img = document.createElement("img");
-  img.title = image;
+  img.id = image;
 
   const res = await fetch(
     window.journaler.feedUrl(`entry/image/?id=${id()}&imageId=${image}`),
@@ -128,7 +128,6 @@ async function displayImage(image) {
 
 async function load() {
   window.journaler.entry = await read();
-  console.log(window.journaler.entry);
 
   if (
     window.journaler.entry.visibility === "private" &&
@@ -161,6 +160,9 @@ async function load() {
     "",
     window.journaler.feedUrl(`write?id=${window.journaler.entry.id}`),
   );
+
+  const entryEvent = new CustomEvent("journaler-entry-ready");
+  window.dispatchEvent(entryEvent);
 }
 
 async function save() {

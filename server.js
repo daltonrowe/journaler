@@ -34,8 +34,6 @@ app.get("/:feed/publish", (req, res) => {
 });
 
 app.get("/:feed/staged", async (req, res) => {
-  console.log(req.params.feed);
-
   const { repo } = config.feeds[req.params.feed];
 
   const data = await spawnAndLog(
@@ -61,8 +59,23 @@ app.get("/:feed", (_req, res) => {
   res.send(html);
 });
 
-app.get("/:feed/write", (_req, res) => {
-  const html = template("write");
+app.get("/:feed/write", (req, res) => {
+  const { format } = config.feeds[req.params.feed];
+
+  let templateType = 'write';
+
+  switch (format) {
+    case 'markdown-ish': {
+      templateType = 'write-md'
+    }
+      break;
+
+    default:
+      // do nothing, use 'write'
+      break;
+  }
+
+  const html = template(templateType);
   res.send(html);
 });
 
@@ -158,10 +171,10 @@ app.get("/:feed/entry/image", (req, res) => {
 });
 
 app.post("/:feed/entry/image", (req, res) => {
-  const { id, data } = req.body;
+  const { id, data, width, height } = req.body;
   const { dir } = config.feeds[req.params.feed];
 
-  const imageFile = path.join(dir, id, `image_${alphaId()}`);
+  const imageFile = path.join(dir, id, `image_${alphaId()}--${width}x${height}`);
   fs.writeFileSync(imageFile, data);
 
   res.send(200);
