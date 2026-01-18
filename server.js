@@ -1,7 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
 import express from "express";
-import { alphaId } from "./lib/alphaId.js";
 import sendView, { template } from "./lib/sendView.js";
 import spawnAndLog from "./lib/spawnAndLog.js";
 
@@ -137,7 +136,8 @@ app.get("/:feed/entry", (req, res) => {
 
     const images = fs
       .readdirSync(entryRoot)
-      .filter((f) => f.startsWith("image_"));
+      .filter((f) => f.startsWith("image_"))
+      .map((f) => f.replace(".png", ""));
     res.json({ id, content, images, ...config.feeds[req.params.feed] });
     return;
   }
@@ -163,24 +163,38 @@ app.post("/:feed/entry", (req, res) => {
 
 app.get("/:feed/entry/image", (req, res) => {
   const { id, imageId } = req.query;
-  const { dir } = config.feeds[req.params.feed];
+  const { dir, visibility } = config.feeds[req.params.feed];
 
   const imageFile = path.join(dir, id, imageId);
-  const data = fs.readFileSync(imageFile);
 
-  res.send(data);
+  if (visibility === "public") {
+    const data = fs.readFileSync(`${imageFile}.png`);
+    const base64 = `data:image/png;base64,${data.toString("base64")}`;
+    res.send(base64);
+  } else {
+    const data = fs.readFileSync(imageFile);
+    res.send(data);
+  }
 });
 
 app.post("/:feed/entry/image", (req, res) => {
-  const { id, data, width, height } = req.body;
-  const { dir } = config.feeds[req.params.feed];
+  const { id, imageId, data, width, height } = req.body;
+  const { dir, visibility } = config.feeds[req.params.feed];
 
+  const ext = visibility === "public" ? ".png" : "";
   const imageFile = path.join(
     dir,
     id,
-    `image_${alphaId()}--${width}x${height}`,
+    `image_${imageId}--${width}x${height}${ext}`,
   );
-  fs.writeFileSync(imageFile, data);
+
+  if (visibility === "public") {
+    const base64Data = data.replace(/^data:image\/png;base64,/, "");
+    const buffer = Buffer.from(base64Data, "base64");
+    fs.writeFileSync(imageFile, buffer);
+  } else {
+    fs.writeFileSync(imageFile, data);
+  }
 
   res.send(200);
 });

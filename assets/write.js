@@ -66,9 +66,18 @@ async function queueImage(event) {
       const ctx = canvas.getContext("2d");
       ctx.drawImage(img, 0, 0, width, height);
 
+      const imageId = Array.from({ length: 8 }, () =>
+        "abcdefghijklmnopqrstuvwxyz0123456789".charAt(
+          Math.floor(Math.random() * 36),
+        ),
+      ).join("");
+
       const resizedImg = document.createElement("img");
       resizedImg.classList.add("pending");
-      resizedImg.src = canvas.toDataURL(file.type || "image/jpeg", 0.9);
+      resizedImg.src = canvas.toDataURL(file.type || "image/png");
+      resizedImg.setAttribute("width", width);
+      resizedImg.setAttribute("height", height);
+      resizedImg.id = `image_${imageId}--${width}x${height}`;
       document.querySelector("#images").appendChild(resizedImg);
     };
     img.src = e.target.result;
@@ -86,12 +95,17 @@ async function uploadImages() {
   const promises = [];
 
   for (const image of pending) {
+    const [first] = image.id.split("--");
+    const [, imageId] = first.split("_");
     const body = {
       id: id(),
       data:
         window.journaler.entry.visibility === "private"
           ? await window.journaler.encryptText(image.src)
           : image.src,
+      width: image.getAttribute("width"),
+      height: image.getAttribute("height"),
+      imageId,
     };
 
     promises.push(
@@ -108,12 +122,22 @@ async function uploadImages() {
   await Promise.allSettled(promises);
 }
 
-async function displayImage(image) {
+async function displayImage(imageId) {
   const img = document.createElement("img");
-  img.id = image;
+  img.id = imageId;
+
+  const hasDimensions = imageId.includes("--");
+
+  if (hasDimensions) {
+    const [, dims] = imageId.split("--");
+    const [w, h] = dims.split("x");
+
+    img.setAttribute("width", w);
+    img.setAttribute("height", h);
+  }
 
   const res = await fetch(
-    window.journaler.feedUrl(`entry/image/?id=${id()}&imageId=${image}`),
+    window.journaler.feedUrl(`entry/image/?id=${id()}&imageId=${imageId}`),
   );
   const data = await res.text();
 
@@ -167,7 +191,7 @@ async function load() {
   write.value = content;
 
   for (const image of window.journaler.entry.images) {
-    displayImage(image);
+    await displayImage(image);
   }
 
   window.history.pushState(
