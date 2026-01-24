@@ -35,21 +35,31 @@ app.get("/:feed/publish", (_req, res) => {
 app.get("/:feed/staged", async (req, res) => {
   const { repo } = config.feeds[req.params.feed];
 
-  const data = await spawnAndLog(
+  const { stdout, stderr } = await spawnAndLog(
     "git add . && git diff --name-only --staged",
     repo,
   );
-  const files = data.split("\n").filter((d) => !!d);
+
+  if (stderr) {
+    return res.json({ error: stderr })
+  }
+
+  const files = stdout.split("\n").filter((d) => !!d);
   res.json({ files });
 });
 
 app.post("/:feed/publish", async (req, res) => {
   const { repo } = config.feeds[req.params.feed];
 
-  const stdout = await spawnAndLog(
+  const { stdout, stderr } = await spawnAndLog(
     `git commit -m 'Journaler Publish ${Date.now()}' && git push`,
     repo,
   );
+
+  if (stderr) {
+    return res.json({ error: stderr })
+  }
+
   res.json({ stdout });
 });
 
