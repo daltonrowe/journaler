@@ -13,7 +13,7 @@ async function publishStaged() {
 async function handlePublish() {
   publish.classList.add("processing");
   const data = await publishStaged();
-  alert(data.stdout);
+  alert(data);
   refreshStaged();
   publish.classList.remove("processing");
 }
